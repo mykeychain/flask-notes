@@ -1,11 +1,15 @@
+<fieldset>
 {{ form.hidden_tag() }}
     {% for field in form
         if field.widget.input_type != 'hidden' %}
-      <p>
-        {{ field.label }}
-        {{ field }}
+      <p class="form-group">
+        {{ field.label(class_="form-label mt-4") }}
+        {{ field(class_="form-control") }}
         {% for error in field.errors %}
           {{ error }}
         {% endfor %}
       </p>
 {% endfor %}
+<button class="btn btn-primary"  type="submit">Register</button>
+
+</fieldset>
