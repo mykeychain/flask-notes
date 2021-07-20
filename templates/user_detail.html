@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title%} {{user.username}}'s Info {% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <h1>{{user.first_name}} {{user.last_name}}</h1>
+    <p>Email: {{user.email}}</p>
+    <p>Username: {{user.username}}</p>
+</div>
+
+<div class="container">
+    <h1>Notes</h1>
+    <ul>
+        {% for note in notes%}
+        <li>
+            <a href="" class="far fa-edit"></a>
+            <a href="" class="fas fa-trash"></a>
+            {{note.title}}
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="" class="btn btn-outline-info btn-sm">Add Note</a>
+</div>
+
+
+
+<br>
+<form action="/logout" , method="POST">
+    <button class="btn btn-primary">Log Out</button>
+</form>
+
+
+
+{% endblock %}

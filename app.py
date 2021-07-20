@@ -1,10 +1,11 @@
 """ Flask app for Notes """
 
-from flask import Flask, redirect, session, request
+from flask import Flask, redirect, session, request, flash
 from flask.templating import render_template
-from forms import RegisterForm
+from wtforms.fields.simple import PasswordField
+from forms import LoginForm, RegisterForm
 
-from models import db, connect_db, User
+from models import db, connect_db, User, Note
 
 app = Flask(__name__)
 
@@ -55,11 +56,46 @@ def register_show_form_and_process():
 def login_show_form_and_process():
     """ Displays and processes login form. """
 
+    form = LoginForm()
+    
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
 
-@app.route("/secret")
-def secret_display():
-    """ Displays secret page. """
+        user = User.authenticate(username, password)
+        
+        if user:
+            session["username"] = user.username
+            
+            return redirect(f"/users/{username}")
+        else:
+            form.username.errors = ["Bad username/password"]
 
-    return render_template("secret.html")
+    return render_template("login.html", form=form)
+
+
+@app.route("/users/<username>")
+def user_info_display(username):
+    """ Displays user information if login. """
+
+    if username == session["username"]:
+        user = User.query.get_or_404(username)
+        return render_template("user_detail.html", user=user, notes=user.notes)   
+
+    else:
+        flash("You have no access to our secret, please login first")
+        return redirect("/register")
+        
+
+@app.route("/logout", methods=["POST"])
+def logout_user():
+    """ Logout current user from website and redirect to homepage"""
+    
+    session.pop("username", None)   
+
+    return redirect("/")
+
+
+
 
 
