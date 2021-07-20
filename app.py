@@ -1,9 +1,10 @@
 """ Flask app for Notes """
 
-from flask import Flask, redirect, session, request, flash
+from flask import Flask, redirect, session, flash
 from flask.templating import render_template
-from wtforms.fields.simple import PasswordField
-from forms import LoginForm, RegisterForm
+from forms import LoginForm, RegisterForm, NoteAddOrEditForm
+from werkzeug.exceptions import Unauthorized
+
 
 from models import db, connect_db, User, Note
 
@@ -18,12 +19,18 @@ db.create_all()
 
 app.config['SECRET_KEY'] = "I'LL NEVER TELL!!"
 
+USERNAME_KEY = 'username'
+
 
 @app.route("/")
 def redirect_register():
     """ Redirects user to the register user page. """
 
     return redirect("/register")
+
+
+################################################################################
+# User routes
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -44,9 +51,9 @@ def register_show_form_and_process():
         db.session.add(new_user)
         db.session.commit()
 
-        session["username"] = new_user.username
+        session[USERNAME_KEY] = new_user.username
 
-        return redirect("/secret")
+        return redirect(f"/users/{new_user.username}")
     
     else: 
         return render_template("register.html", form=form)
@@ -65,7 +72,7 @@ def login_show_form_and_process():
         user = User.authenticate(username, password)
         
         if user:
-            session["username"] = user.username
+            session[USERNAME_KEY] = user.username
             
             return redirect(f"/users/{username}")
         else:
@@ -74,28 +81,117 @@ def login_show_form_and_process():
     return render_template("login.html", form=form)
 
 
+
 @app.route("/users/<username>")
 def user_info_display(username):
     """ Displays user information if login. """
 
-    if username == session["username"]:
+    if username == session[USERNAME_KEY]:
         user = User.query.get_or_404(username)
         return render_template("user_detail.html", user=user, notes=user.notes)   
 
     else:
-        flash("You have no access to our secret, please login first")
-        return redirect("/register")
-        
+        flash("You do not have access to this user's information.")
+        return redirect(f"/users/{session[USERNAME_KEY]}")
+
+
 
 @app.route("/logout", methods=["POST"])
-def logout_user():
-    """ Logout current user from website and redirect to homepage"""
+def user_logout():
+    """ Logout current user from website and redirect to homepage. """
     
-    session.pop("username", None)   
+    session.pop(USERNAME_KEY, None)   
 
     return redirect("/")
 
 
+@app.route("/users/<username>/delete", methods=["POST"])
+def user_delete(username): 
+    """ Deletes current user and all associated notes. """
+
+    user = User.query.get(username)
+    notes = user.notes
+
+    if session.get(USERNAME_KEY) != username:
+        raise Unauthorized() 
+
+    for note in notes:
+        db.session.delete(note)
+
+    db.session.delete(user)
+    db.session.commit()
+
+    return redirect("/")
 
 
+################################################################################
+# Note routes
+
+
+@app.route("/users/<username>/notes/add", methods=["GET", "POST"])
+def note_add(username):
+    """ Displays and processes form to add note. """
+
+    form = NoteAddOrEditForm()
+    user = User.query.get_or_404(username)
+
+    # raises unauthorized error if current user is unauthorized or not logged in
+    if session.get(USERNAME_KEY) != username:
+        raise Unauthorized() 
+
+
+    if form.validate_on_submit():
+        title = form.title.data
+        content = form.content.data
+
+        new_note = Note(
+                    title=title,
+                    content=content, 
+                    owner=username)
+
+        db.session.add(new_note)
+        db.session.commit()
+
+        return redirect(f"/users/{username}")
+    
+    else: 
+        return render_template("add_note.html", user=user, form=form)
+
+
+@app.route("/notes/<int:note_id>/update", methods=["GET", "POST"])
+def note_update(note_id):
+    """ Displays and processes form to edit a note. """
+
+    note = Note.query.get_or_404(note_id)
+    form = NoteAddOrEditForm(obj=note)
+
+    if session.get(USERNAME_KEY) != note.user.username:
+        raise Unauthorized() 
+
+    if form.validate_on_submit():
+        note.title = form.title.data
+        note.content = form.content.data
+
+        db.session.commit()
+
+        return redirect(f"/users/{note.owner}")
+    
+    else: 
+        return render_template("edit_note.html", form=form)
+
+
+
+@app.route("/notes/<int:note_id>/delete", methods=["POST"])
+def note_delete(note_id):
+    """ Deletes a note. """
+
+    note = Note.query.get(note_id)
+
+    if session.get(USERNAME_KEY) != note.user.username:
+        raise Unauthorized() 
+
+    db.session.delete(note)
+    db.session.commit()
+
+    return redirect(f"/users/{session[USERNAME_KEY]}")
 

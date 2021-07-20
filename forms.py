@@ -1,3 +1,5 @@
+""" WTForms for Notes """
+
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField 
 from wtforms.fields.html5 import EmailField
@@ -15,13 +17,14 @@ class RegisterForm(FlaskForm):
 
 
 class LoginForm(FlaskForm):
-    """ Form to login existing users"""
+    """ Form to authenticate existing user. """
 
     username = StringField("Username", validators=[InputRequired()])
     password = PasswordField("Password", validators=[InputRequired()])
 
-class NoteForm(FlaskForm):
-    """ Form to add note"""
+# NoteAddOrEditForm or copy and make edit form
+class NoteAddOrEditForm(FlaskForm):
+    """ Form to add note. """
 
     title = StringField("Title", validators=[InputRequired()])
-    content = TextAreaField("Content", validators=[InputRequired()])
+    content = TextAreaField("Content")

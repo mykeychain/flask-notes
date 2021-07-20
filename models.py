@@ -1,6 +1,7 @@
+""" Models for Notes """
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from sqlalchemy.orm import backref
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -85,11 +86,13 @@ class Note(db.Model):
             nullable=False
     )
     content = db.Column(
-              db.Text
+              db.Text,
+              nullable=False
     )
     owner = db.Column(
             db.Text,
-            db.ForeignKey("users.username")
+            db.ForeignKey("users.username"),
+            nullable=False
     )
 
     user = db.relationship("User", backref="notes")

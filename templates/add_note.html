@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %} Add New Note {% endblock %}
+
+{% block content %}
+  <h1 class="display-4">Add Note</h1>
+  <form method="POST">
+    {% include '_form.html' %}
+    <button class="btn btn-primary"  type="submit">Add Note</button>
+  </form>
+{% endblock %}

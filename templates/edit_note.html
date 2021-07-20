@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %} Edit Note {% endblock %}
+
+{% block content %}
+  <h1 class="display-4">Edit Note</h1>
+  <form method="POST">
+    {% include '_form.html' %}
+    <button class="btn btn-primary"  type="submit">Save</button>
+  </form>
+{% endblock %}
