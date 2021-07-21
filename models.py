@@ -45,6 +45,14 @@ class User(db.Model):
         nullable=False
     )
 
+    is_admin = db.Column(
+               db.Boolean,
+               nullable=False,
+               default=False
+    )
+
+
+
     @classmethod
     def register(cls, username, password, email, first_name, last_name):
         """ Creates a hash from password and returns new User instance. """
@@ -96,3 +104,15 @@ class Note(db.Model):
     )
 
     user = db.relationship("User", backref="notes")
+
+
+    def authorized(self, session_user):
+        # Unauthorized:
+        #      if session_user != username
+        #   or if is_admin is Falue
+
+        # Authorzied:
+        #      
+        return (session_user == self.user.username) or (self.user.is_admin is True)
+            
+

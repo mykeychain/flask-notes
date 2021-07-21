@@ -11,7 +11,11 @@
 </div>
 
 <form action="/logout" method="POST">
-    <button class="btn btn-primary">Log Out</button>
+    <button class="btn btn-sm btn-primary">Log Out</button>
+</form>
+
+<form action="/users/{{user.username}}/delete" method="POST">
+    <button class="btn btn-sm btn-danger">Delete User</button>
 </form>
 
 <br>
@@ -31,10 +35,8 @@
     </ul>
     <a href="/users/{{user.username}}/notes/add" class="btn btn-outline-info btn-sm">Add Note</a>
 </div>
+<br>
 
-<form action="/users/{{user.username}}/delete" method="POST">
-    <button class="btn btn-danger">Delete User</button>
-</form>
 
 
 

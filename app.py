@@ -39,6 +39,10 @@ def register_show_form_and_process():
 
     form = RegisterForm()
 
+    if session.get(USERNAME_KEY):
+        return redirect(f"/users/{session[USERNAME_KEY]}")
+
+
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
@@ -64,6 +68,9 @@ def login_show_form_and_process():
     """ Displays and processes login form. """
 
     form = LoginForm()
+
+    if session.get(USERNAME_KEY):
+        return redirect(f"/users/{session[USERNAME_KEY]}")
     
     if form.validate_on_submit():
         username = form.username.data
@@ -91,8 +98,9 @@ def user_info_display(username):
         return render_template("user_detail.html", user=user, notes=user.notes)   
 
     else:
-        flash("You do not have access to this user's information.")
-        return redirect(f"/users/{session[USERNAME_KEY]}")
+        raise Unauthorized()
+        # flash("You do not have access to this user's information.")
+        # return redirect(f"/users/{session[USERNAME_KEY]}")
 
 
 
@@ -136,7 +144,7 @@ def note_add(username):
     user = User.query.get_or_404(username)
 
     # raises unauthorized error if current user is unauthorized or not logged in
-    if session.get(USERNAME_KEY) != username:
+    if session.get(USERNAME_KEY) != username and user.is_admin is False:
         raise Unauthorized() 
 
 
@@ -165,19 +173,23 @@ def note_update(note_id):
     note = Note.query.get_or_404(note_id)
     form = NoteAddOrEditForm(obj=note)
 
-    if session.get(USERNAME_KEY) != note.user.username:
+    if note.authorized(session.get(USERNAME_KEY)):
+
+        if form.validate_on_submit():
+            note.title = form.title.data
+            note.content = form.content.data
+
+            db.session.commit()
+
+            return redirect(f"/users/{note.owner}")
+        
+        else: 
+            return render_template("edit_note.html", form=form)
+       
+    else: 
         raise Unauthorized() 
 
-    if form.validate_on_submit():
-        note.title = form.title.data
-        note.content = form.content.data
-
-        db.session.commit()
-
-        return redirect(f"/users/{note.owner}")
     
-    else: 
-        return render_template("edit_note.html", form=form)
 
 
 
@@ -187,7 +199,7 @@ def note_delete(note_id):
 
     note = Note.query.get(note_id)
 
-    if session.get(USERNAME_KEY) != note.user.username:
+    if note.authorized(session[USERNAME_KEY]):
         raise Unauthorized() 
 
     db.session.delete(note)
